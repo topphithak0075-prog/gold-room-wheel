@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#17120a">
+<title>วงล้อสุ่มห้องทองคำ</title>
+<style>
+:root{--gold:#f5d36a;--gold2:#b98721;--dark:#17120a;--cream:#fff3c2}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#3b2b0d,#100d08 68%);color:var(--cream);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;padding:22px 14px 30px}
+h1{font-size:clamp(25px,6vw,36px);margin:10px 0 6px;color:var(--gold);text-shadow:0 2px 18px #b9872177}
+.sub{margin:0 0 20px;color:#e5d7a6;font-size:14px}
+.wrap{width:min(88vw,390px);min-height:min(88vw,390px);margin:12px auto 0;position:relative;filter:drop-shadow(0 12px 20px #0009)}
+canvas{display:block;width:100%;aspect-ratio:1/1;height:auto;border-radius:50%;background:radial-gradient(circle,#3a290b,#1b1306);touch-action:manipulation}
+.pointer{position:absolute;top:-7px;left:50%;transform:translateX(-50%);z-index:2;width:0;height:0;border-left:17px solid transparent;border-right:17px solid transparent;border-top:0;border-bottom:35px solid #fff1b1;filter:drop-shadow(0 2px 3px #000); }
+button{appearance:none;border:1px solid #ffeaa0;border-radius:999px;background:linear-gradient(135deg,#fff0a3,#d9a62e 55%,#9a6714);color:#261904;font-size:20px;font-weight:800;padding:15px 42px;margin:24px auto 12px;box-shadow:0 5px 0 #68440b,0 10px 25px #0007;cursor:pointer}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #68440b}
+button:disabled{opacity:.65}
+.result{min-height:52px;margin:12px auto 0;max-width:390px;border:1px solid #cda344;border-radius:16px;padding:13px;background:#211909;color:#ffe9a1;font-size:22px;font-weight:800}
+.note{font-size:12px;color:#b7a777;margin:12px auto 0;max-width:390px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>วงล้อสุ่มห้อง</h1>
+<p class="sub">GOLD EDITION · ห้อง 1–12</p>
+<div class="wrap">
+  <div class="pointer"></div>
+  <canvas id="wheel" width="900" height="900" aria-label="วงล้อสุ่มห้อง 1 ถึง 12"></canvas>
+</div>
+<button id="spin">หมุนวงล้อ</button>
+<div id="result" class="result" aria-live="polite">พร้อมแล้ว กดหมุนได้เลย</div>
+<p class="note">วงล้อสุ่มห้อง 1–12 · ไม่แสดงเปอร์เซ็นต์โอกาสออก</p>
+<script>
+(function(){
+ const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
+ const spinBtn=document.getElementById('spin'),result=document.getElementById('result');
+ if(!ctx){result.textContent='อุปกรณ์นี้ไม่รองรับการแสดงวงล้อในหน้าตัวอย่าง กรุณาเปิดผ่านเว็บไซต์';spinBtn.disabled=true;return;}
+ const n=12,arc=2*Math.PI/n,colors=['#f5d36a','#c99a32','#ffe8a0','#ad791d','#e9bd4e','#8e6117'];
+ let angle=0,spinning=false;
+ function draw(){
+   const c=450,r=420;
+   ctx.clearRect(0,0,900,900);
+   ctx.save();ctx.translate(c,c);
+   ctx.beginPath();ctx.arc(0,0,r+14,0,Math.PI*2);ctx.fillStyle='#5c3b0b';ctx.fill();
+   ctx.beginPath();ctx.arc(0,0,r+7,0,Math.PI*2);ctx.strokeStyle='#f8dc7a';ctx.lineWidth=10;ctx.stroke();
+   for(let i=0;i<n;i++){
+     const start=angle+i*arc-Math.PI/2,end=start+arc;
+     ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r,start,end);ctx.closePath();
+     const grad=ctx.createRadialGradient(0,0,30,0,0,r);grad.addColorStop(0,colors[i%colors.length]);grad.addColorStop(1,colors[(i+2)%colors.length]);
+     ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle='#fff0b3';ctx.lineWidth=4;ctx.stroke();
+     const mid=start+arc/2;ctx.save();ctx.rotate(mid);ctx.translate(r*.69,0);ctx.rotate(Math.PI/2);
+     ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 49px -apple-system, sans-serif';
+     ctx.fillStyle='#2b1b04';ctx.shadowColor='#fff0a0';ctx.shadowBlur=2;ctx.fillText(String(i+1),0,0);ctx.restore();
+   }
+   ctx.beginPath();ctx.arc(0,0,82,0,Math.PI*2);ctx.fillStyle='#241704';ctx.fill();ctx.lineWidth=8;ctx.strokeStyle='#ffe79a';ctx.stroke();
+   ctx.beginPath();ctx.arc(0,0,61,0,Math.PI*2);ctx.strokeStyle='#bd8b25';ctx.lineWidth=3;ctx.stroke();
+   ctx.fillStyle='#ffe9a0';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 27px -apple-system, sans-serif';ctx.fillText('GOLD',0,-9);ctx.font='bold 20px -apple-system, sans-serif';ctx.fillText('SPIN',0,20);
+   ctx.restore();
+ }
+ function pickRoom(){
+   // Weighted draw: room 11 has the lowest chance; no odds are displayed.
+   const weights=Array.from({length:12},(_,i)=>i===10?1:10);
+   let x=Math.random()*weights.reduce((a,b)=>a+b,0);
+   for(let i=0;i<weights.length;i++){x-=weights[i];if(x<0)return i+1;}
+   return 12;
+ }
+ function spin(){
+   if(spinning)return;spinning=true;spinBtn.disabled=true;result.textContent='กำลังหมุน...';
+   const room=pickRoom();
+   // Pointer is at -90deg. Segment center for room r is angle + (r-0.5)*arc - PI/2.
+   const current=((angle%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+   const targetBase=(((Math.PI/2)-(room-.5)*arc)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+   const extraTurns=(6+Math.floor(Math.random()*3))*2*Math.PI;
+   const delta=((targetBase-current)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)+extraTurns;
+   const start=angle,duration=5200+Math.random()*700,t0=performance.now();
+   function frame(now){
+     const t=Math.min(1,(now-t0)/duration),ease=1-Math.pow(1-t,5);
+     angle=start+delta*ease;draw();
+     if(t<1)requestAnimationFrame(frame);
+     else{angle=((targetBase%(2*Math.PI))+2*Math.PI)%(2*Math.PI);draw();result.textContent='ผลสุ่ม: ห้อง '+room;spinning=false;spinBtn.disabled=false;}
+   }
+   requestAnimationFrame(frame);
+ }
+ spinBtn.addEventListener('click',spin);
+ spinBtn.addEventListener('touchend',function(e){e.preventDefault();spin();},{passive:false});
+ draw();
+})();
+</script>
+</body>
+</html>
